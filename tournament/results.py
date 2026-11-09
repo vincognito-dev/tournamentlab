@@ -1,7 +1,5 @@
 from tournament.fixtures import find_fixture, generate_fixtures
 
-
-
 def validate_score(value):
     if not (isinstance(value, int) and not isinstance(value, bool) and value >= 0):
         raise ValueError("Score must be a whole number, 0 or more.")
