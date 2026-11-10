@@ -1,6 +1,6 @@
 import copy
 import random
- 
+
 from tournament.fixtures import generate_fixtures, list_fixtures
 from tournament.results import record_result
 from tournament.standings import (
@@ -11,9 +11,9 @@ from tournament.standings import (
 )
 from tournament.storage import SCHEMA_VERSION, load_league, save_league
 from tournament.teams import list_teams, register_team
- 
+
 DEFAULT_FILE = "season.json"
- 
+
 MENU = """
 === TournamentLab ===
  1. Register a team
@@ -27,10 +27,11 @@ MENU = """
  9. Show champion
 10. Simulate demo results (does not change your records)
  0. Quit"""
- 
+
+
 def new_league():
     return {"schema_version": SCHEMA_VERSION, "teams": [], "fixtures": []}
- 
+
 def ask(prompt):
     return input(prompt).strip()
 
@@ -42,7 +43,8 @@ def print_table(rows, title):
         print(f"{position:<4}{row['name']:<22}{row['played']:>3}{row['wins']:>3}"
               f"{row['draws']:>3}{row['losses']:>3}{row['goals_for']:>4}"
               f"{row['goals_against']:>4}{row['goal_diff']:>+5}{row['points']:>5}")
- 
+
+
 def print_champion(league):
     champion = get_champion(league["teams"], league["fixtures"])
     if champion is not None:
@@ -65,7 +67,8 @@ def menu_register_team(league):
         print(f"Error: {err}")
         return
     print(f"Registered {team['name']} as {team['id']}.")
- 
+
+
 def menu_list_teams(league):
     teams = list_teams(league["teams"])
     if not teams:
@@ -73,7 +76,8 @@ def menu_list_teams(league):
         return
     for team in teams:
         print(f"  {team['id']}  {team['name']}")
- 
+
+
 def menu_generate_schedule(league):
     if league["fixtures"]:
         print("The schedule has already been generated for this season.")
@@ -86,6 +90,7 @@ def menu_generate_schedule(league):
     league["fixtures"] = fixtures          # change state only after success
     print(f"Created {len(fixtures)} fixtures.")
 
+
 def menu_list_fixtures(league):
     if not league["fixtures"]:
         print("No schedule yet. Generate it first.")
@@ -97,6 +102,7 @@ def menu_list_fixtures(league):
         else:
             result = "pending"
         print(f"  {row['id']}  {row['home']} vs {row['away']}  [{result}]")
+
 
 def menu_record_result(league):
     if not league["fixtures"]:
@@ -117,7 +123,8 @@ def menu_record_result(league):
         print(f"Error: {err}")
         return
     print(f"Recorded {fixture_id}: {home_score}-{away_score}.")
- 
+
+
 def menu_show_standings(league):
     rows = rank_standings(compute_standings(league["teams"], league["fixtures"]))
     if not rows:
@@ -125,6 +132,7 @@ def menu_show_standings(league):
         return
     label = "FINAL" if is_league_complete(league["fixtures"]) else "in progress"
     print_table(rows, f"Standings ({label})")
+
 
 def menu_save(league):
     path = ask(f"File name [{DEFAULT_FILE}]: ") or DEFAULT_FILE
@@ -135,7 +143,9 @@ def menu_save(league):
         return
     print(f"Saved to {path}.")
 
+
 def menu_load(league):
+    """Return the league to use afterwards (the old one if loading fails)."""
     path = ask(f"File name [{DEFAULT_FILE}]: ") or DEFAULT_FILE
     try:
         loaded = load_league(path)
@@ -145,10 +155,12 @@ def menu_load(league):
         return league
     print(f"Loaded {len(loaded['teams'])} teams and {len(loaded['fixtures'])} fixtures.")
     return loaded
- 
+
+
 def menu_champion(league):
     print_champion(league)
- 
+
+
 def menu_simulate(league):
     if not league["fixtures"]:
         print("No schedule yet. Generate it first.")
@@ -164,18 +176,19 @@ def menu_simulate(league):
     except ValueError:
         print("Error: the seed must be a whole number.")
         return
- 
+
     rng = random.Random(seed)
     demo = copy.deepcopy(league)
     for fixture in demo["fixtures"]:
         if fixture["status"] == "pending":
             record_result(demo["fixtures"], fixture["id"],
                           rng.randint(0, 4), rng.randint(0, 4))
- 
+
     rows = rank_standings(compute_standings(demo["teams"], demo["fixtures"]))
     print_table(rows, f"SIMULATED standings (seed {seed}) - not your real records")
     print_champion(demo)
- 
+
+
 ACTIONS = {
     "1": menu_register_team,
     "2": menu_list_teams,
@@ -206,3 +219,4 @@ def main():
                 print("Please type a number from the menu.")
         except (EOFError, KeyboardInterrupt):
             print("\nGoodbye!")
+            break
